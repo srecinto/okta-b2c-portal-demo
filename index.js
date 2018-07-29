@@ -4,6 +4,12 @@ var fs = require('fs');
 var request = require("request");
 
 
+var oktaConfig = {
+    "oktaOrgUrl": "https://companyx.okta.com",
+    "apiKey": "00dpe4hYVZ-4EOixZ8uFmWx0zzdhu563-BixRvgx04",
+}
+
+
 http.createServer(function (req, res) {
     console.log("createServer()");
     res.writeHead(200, {'Content-Type': 'text/html'});
@@ -59,15 +65,16 @@ http.createServer(function (req, res) {
 
 getSchema = function (requestObj) {
     return new Promise((resolve, reject) => {
+        console.log("getSchema()");
 
         var options = {
             method: 'GET',
-            url: 'https://companyx.okta.com/api/v1/meta/schemas/user/default',
+            url: oktaConfig.oktaOrgUrl + '/api/v1/meta/schemas/user/default',
             headers:
                 {
                     'postman-token': 'b79652df-ed9d-e8fb-4606-64dca1166f52',
                     'cache-control': 'no-cache',
-                    authorization: 'SSWS 00dpe4hYVZ-4EOixZ8uFmWx0zzdhu563-BixRvgx04',
+                    authorization: 'SSWS ' + oktaConfig.apiKey,
                     'content-type': 'application/json',
                     accept: 'application/json'
                 }
@@ -82,7 +89,8 @@ getSchema = function (requestObj) {
 
 var requiredObjects = function( requestObj ) {
     return new Promise ( (resolve, reject)=> {
-
+        console.log("requiredObjects()");
+        
         requestObj.requiredAttributes = []
 
         for (var key in requestObj.oktaJsonResponse.definitions.custom.properties) {
@@ -102,6 +110,8 @@ var requiredObjects = function( requestObj ) {
 
 getUserProfile  = function ( requestObj )  {
     return new Promise ( (resolve)=> {
+        console.log("getUserProfile()");
+        
         requestObj.userProfile = {
             "id": "00u1a2izikgyTFgl21d8",
             "status": "ACTIVE",
@@ -171,6 +181,7 @@ getUserProfile  = function ( requestObj )  {
 fakeGetJson  = function ( requestObj ) {
 
     return new Promise((resolve) => {
+        console.log("fakeGetJson()");
 
         var json = {
             "id": "https://companyx.okta.com/meta/schemas/user/default",
@@ -861,7 +872,7 @@ fakeGetJson  = function ( requestObj ) {
 
 compareUserProfile  = function ( requestObj ) {
     return new Promise((resolve) => {
-
+        console.log("compareUserProfile()");
         requestObj.requestAttributes = []
 
         function attributeExistsUserProfile ( attribute) {
@@ -886,6 +897,7 @@ compareUserProfile  = function ( requestObj ) {
 renderHtml  = function ( requestObj ) {
 
     return new Promise((resolve) => {
+        console.log("renderHtml()");
         requestObj.html = "<html>"
         for (var key in requestObj.requestAttributes) {
             if (requestObj.requestAttributes.hasOwnProperty(key)) {
@@ -903,6 +915,7 @@ renderHtml  = function ( requestObj ) {
 readHtmlFile = function ( filename ) {
 
     return new Promise ( (resolve, reject)=> {
+        console.log("readHtmlFile('" + filename + "')");
 
         fs.readFile(filename, function(err, data) {
             if ( err ) reject ( err )
