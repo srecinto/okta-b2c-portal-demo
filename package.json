@@ -1,0 +1,17 @@
+{
+  "name": "progressiveprofiling",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "request": "^2.87.0",
+    "require": "^2.4.20",
+    "url": "^0.11.0"
+  }
+}
