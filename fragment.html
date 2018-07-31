@@ -1,0 +1,18 @@
+<div class="form_item">
+    <div class="frm_label">
+        <label for="{{tag}}">{{description}}</label>
+    </div>
+    <div class="item">
+        <input class="text-box single-line" id="{{tag}}"
+               name="{{tag}}" value="" type="text">
+               <!--data-val="true"-->
+               <!--data-val-length="Your Mayo Clinic number must be 10 digits or less." data-val-length-max="15"-->
+               <!--data-val-length-min="1" data-val-regex="Please enter only numbers and dashes."-->
+               <!--data-val-regex-pattern="[0-9\-]{6,15}"-->
+               <!--data-val-required="Please enter your Mayo Clinic number to proceed. " >-->
+        <div class="item_sub_text">{{description}}</div>
+        <span class="field-validation-valid" data-valmsg-for="MayoClinicNumber"
+              data-valmsg-replace="true"></span>
+    </div>
+
+</div>

@@ -3,42 +3,58 @@ var url = require('url');
 var fs = require('fs');
 var request = require("request");
 
+// Environment variables required
+// oktaOrg = url okta org example: https://okta.okta.com
+// oktaKey = Okta api key
 
-var oktaConfig = {
-    "oktaOrgUrl": "https://companyx.okta.com",
-    "apiKey": "00dpe4hYVZ-4EOixZ8uFmWx0zzdhu563-BixRvgx04",
+
+if(!process.env.oktaOrg && !process.env.oktaKey  ) {
+    console.log('environment variables not set, set them like this:');
+    console.log('export oktaOrg="https://okta.okta.com"');
+    console.log('export oktaKey="yourOktaKey"');
+    return;
 }
 
-
 http.createServer(function (req, res) {
-    console.log("createServer()");
     res.writeHead(200, {'Content-Type': 'text/html'});
     var q = url.parse(req.url, true).query;
     var txt = q.year + " " + q.month;
-    if (req.url == "/test") {
+    if (req.url == "/") {
 
         var requestObj = {}
 
-        fakeGetJson ( requestObj).
-            then ( getUserProfile ).
-            then ( requiredObjects).
-            then ( compareUserProfile).
-            then ( renderHtml).
-            then ( (responseObj)=> {
-            // console.log(JSON.stringify( responseObj))
-            readHtmlFile ( "index.html").then ( (html)=> {
-                res.end(html);
+        requestObj.filename = "index.html"
+
+        //requestObj.requestAttributes (These are the attributes we want)
+        //requestObj.fragment (Fields we are going to add to form)
+        //requestObj.html (webpage w/ form)
+        //requestObj.userProfile (Okta User Profile)
+        //requestObj.require dAttributes (array of required Attributes according to Schema)
+
+        //todo: Need to get the UserID, I tested in statically
+        //requestObj.userid (guid or something to identify the User in Okta)
+
+        fakeGetJson ( requestObj). //get Schema from Okta
+            then ( getUserProfile ). //get Selected User Profile //todo: need to update to fetch Specific User profile
+            then ( requiredObjects). //find required attributes
+            then ( compareUserProfile). //compare it to user profile
+            then ( getFragments). //generate the fragments
+            then ( readHtmlFile). //pull html from filesystem
+            then ( (requestObj)=> { //replace {{fragment}} tag in HTML w/ new elements
+
+            res.end (requestObj.html.replace(/{{fragment}}/g, requestObj.fragment))
+
+                // console.log(fragment)
+
+
+                // res.end(html);
 
             }).catch ( (error)=> {
                 console.log(error)
             });
 
 
-
-        }).catch ( (error)=> {
-            console.log("Error: ");
-            console.log(error);
-        })
+        //todo: stubbed out fetching the profile from Okta
 
         // getSchema({}).then((responseObj) => {
         //     var customAttributes = JSON.parse(responseObj)
@@ -56,30 +72,30 @@ http.createServer(function (req, res) {
         // }).catch ( (error)=> {
         //     res.end(error.toString());
         // })
+
+
     } else {
         res.end("bad");
 
     }
-}).listen(process.env.PORT);
+}).listen(process.env.PORT, process.env.IP);
 
 
 getSchema = function (requestObj) {
     return new Promise((resolve, reject) => {
-        console.log("getSchema()");
 
         var options = {
             method: 'GET',
-            url: oktaConfig.oktaOrgUrl + '/api/v1/meta/schemas/user/default',
+            url: 'https://companyx.okta.com/api/v1/meta/schemas/user/default',
             headers:
                 {
                     'postman-token': 'b79652df-ed9d-e8fb-4606-64dca1166f52',
                     'cache-control': 'no-cache',
-                    authorization: 'SSWS ' + oktaConfig.apiKey,
+                    authorization: 'SSWS 00dpe4hYVZ-4EOixZ8uFmWx0zzdhu563-BixRvgx04', //todo: Key Deleted
                     'content-type': 'application/json',
                     accept: 'application/json'
                 }
         };
-
         request(options, function (error, response, body) {
             if (error) reject ( error )
             resolve(body);
@@ -89,8 +105,7 @@ getSchema = function (requestObj) {
 
 var requiredObjects = function( requestObj ) {
     return new Promise ( (resolve, reject)=> {
-        console.log("requiredObjects()");
-        
+
         requestObj.requiredAttributes = []
 
         for (var key in requestObj.oktaJsonResponse.definitions.custom.properties) {
@@ -106,12 +121,8 @@ var requiredObjects = function( requestObj ) {
 
     })
 }
-
-
 getUserProfile  = function ( requestObj )  {
     return new Promise ( (resolve)=> {
-        console.log("getUserProfile()");
-        
         requestObj.userProfile = {
             "id": "00u1a2izikgyTFgl21d8",
             "status": "ACTIVE",
@@ -178,11 +189,9 @@ getUserProfile  = function ( requestObj )  {
     })
 }
 
+//todo: Junk this, just used to test on plane
 fakeGetJson  = function ( requestObj ) {
-
     return new Promise((resolve) => {
-        console.log("fakeGetJson()");
-
         var json = {
             "id": "https://companyx.okta.com/meta/schemas/user/default",
             "$schema": "http://json-schema.org/draft-04/schema#",
@@ -330,7 +339,7 @@ fakeGetJson  = function ( requestObj ) {
                         },
                         "tester2": {
                             "title": "tester2",
-                            "description": "tester2",
+                            "description": "Tester 2 Description",
                             "type": "string",
                             "required": true,
                             "mutability": "READ_WRITE",
@@ -862,7 +871,6 @@ fakeGetJson  = function ( requestObj ) {
                 }
             }
         };
-
         var responseObj = {}
         responseObj.oktaJsonResponse = json
         resolve(responseObj)
@@ -872,9 +880,7 @@ fakeGetJson  = function ( requestObj ) {
 
 compareUserProfile  = function ( requestObj ) {
     return new Promise((resolve) => {
-        console.log("compareUserProfile()");
         requestObj.requestAttributes = []
-
         function attributeExistsUserProfile ( attribute) {
             requestObj.userProfile.hasOwnProperty(attribute)
             return (requestObj.userProfile.profile.hasOwnProperty(attribute))
@@ -895,9 +901,7 @@ compareUserProfile  = function ( requestObj ) {
 
 
 renderHtml  = function ( requestObj ) {
-
     return new Promise((resolve) => {
-        console.log("renderHtml()");
         requestObj.html = "<html>"
         for (var key in requestObj.requestAttributes) {
             if (requestObj.requestAttributes.hasOwnProperty(key)) {
@@ -906,24 +910,40 @@ renderHtml  = function ( requestObj ) {
                 requestObj.html +="<p>"+val.title+"<p/><br>"
             }
         }
-
         requestObj.html +="</html>"
         resolve(requestObj)
     })
 }
 
-readHtmlFile = function ( filename ) {
-
+readHtmlFile = function ( requestObj ) {
     return new Promise ( (resolve, reject)=> {
-        console.log("readHtmlFile('" + filename + "')");
+        fs.readFile("index.html", function(err, data) {
+            if ( err ) reject ( err )
+            requestObj.html = data.toString()
+            resolve (requestObj)
+        });
+    })
+}
 
-        fs.readFile(filename, function(err, data) {
+getFragments = function ( requestObj ) {
+    return new Promise ( (resolve, reject)=> {
+        fs.readFile("fragment.html", function(err, fragment) {
             if ( err ) reject ( err )
 
-            resolve (data.toString())
+            requestObj.fragment = ""
+            fragmentOriginal = fragment.toString();
 
+            for (var key in requestObj.requestAttributes) {
+                if (requestObj.requestAttributes.hasOwnProperty(key)) {
+                    var val = requestObj.requestAttributes[key];
+                    var temp = fragmentOriginal.replace(/{{tag}}/g, val.title).
+                        replace(/{{description}}/g, val.description);
+                    requestObj.fragment+=temp
+                    // console.log(requestObj.fragment)
+                }
+            }
+            resolve ( requestObj )
         });
-
     })
 }
 
