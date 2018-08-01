@@ -34,113 +34,132 @@ if(!process.env.oktaOrg &&
 
 http.createServer(function (req, res) {
     //res.writeHead(200, {'Content-Type': 'text/html'});
-    var q = url.parse(req.url, true).query;
-    var txt = q.year + " " + q.month;
+    //var q = url.parse(req.url, true).query;
+    //var txt = q.year + " " + q.month;
     
     //Routing rules
     console.log("Request URL: '" + req.url + "'");
     switch(req.url) {
         case "/":
-            var requestObj = {}
-
-            requestObj.filename = "./web/index.html";
-            readHtmlFile(requestObj).then((requestObj)=>{
-                applyOktaConfigValues(requestObj).then((requestObj) => {
-                    res.writeHead(200, { 'Content-Type': requestObj.contentType });
-                    //console.log(res);
-                    res.end(requestObj.data, "utf-8");
-                });
-            }).catch((error) => {
-                console.log(error);
-                res.statusCode = 200;
-                res.end("");
-            });
-            
+        case "/index.html":
+            handleRoot(req, res);
             break;
         case "/oidc":
-            
-            if (req.method == 'POST') {
-                var body = "";
-                req.on("data", function (data) {
-                    body += data;
-                });
-                req.on("end", function () {
-                    console.log("Body: " + body);
-                    
-                    formBody = qs.parse(body)
-                    console.log("code: " + formBody.code);
-                    
-                    getOIDCTokens(formBody.code).then((results) => {
-                        console.log(results);
-                        var tokenResponse = JSON.parse(results);
-                        res.writeHead(301, {
-                            "Location": process.env.appBaseUrl,
-                            "Set-Cookie": "access_token=" + tokenResponse.access_token,
-                            "Set-Cookie": "id_token=" + tokenResponse.id_token
-                        });
-                        res.end();
-                    })
-                });
-            } else {
-                // redirect back to root
-                res.writeHead(301, {"Location": process.env.appBaseUrl});
-                res.end();
-            }
-            
+            handleOidcCode(req, res);
             break;
         case "/logout":
-            
-            res.writeHead(301, {"Location": process.env.oktaOrg + "/login/signout?fromURI=" + process.env.appBaseUrl});
-            res.end();
-            
+            logOut(req, res);
             break;
         case "/test":
-            console.log("Patrick Test code");
-            var requestObj = {}
-
-            requestObj.filename = "index.html"
-    
-            //requestObj.requestAttributes (These are the attributes we want)
-            //requestObj.fragment (Fields we are going to add to form)
-            //requestObj.html (webpage w/ form)
-            //requestObj.userProfile (Okta User Profile)
-            //requestObj.require dAttributes (array of required Attributes according to Schema)
-    
-            //todo: Need to get the UserID, I tested in statically
-            //requestObj.userid (guid or something to identify the User in Okta)
-    
-            fakeGetJson ( requestObj). //get Schema from Okta
-                then ( getUserProfile ). //get Selected User Profile //todo: need to update to fetch Specific User profile
-                then ( requiredObjects). //find required attributes
-                then ( compareUserProfile). //compare it to user profile
-                then ( getFragments). //generate the fragments
-                then ( readHtmlFile). //pull html from filesystem
-                then ( (requestObj)=> { //replace {{fragment}} tag in HTML w/ new elements
-    
-                res.end (requestObj.data.toString().replace(/{{fragment}}/g, requestObj.fragment))
-                    // console.log(fragment)
-                    // res.end(html);
-                }).catch ( (error)=> {
-                    console.log(error)
-                });
+            progresiveProfile(req, res);
             break;
         default:
             //NOTE: This will generically rout to the web folder for static html files
-            var requestObj = {}
-            requestObj.filename = "./web" + req.url
-            
-            readHtmlFile(requestObj).then((requestObj) => {
-                res.writeHead(200, { 'Content-Type': requestObj.contentType });
-                res.end(requestObj.data, "utf-8");
-            }).catch((error) => {
-                console.log(error); 
-                res.statusCode = 200;
-                res.end("");
-            });
+            displayDefault(req, res);
+            break;
     }
     
 }).listen(process.env.PORT, process.env.IP);
 
+handleRoot = function(req, res) {
+    console.log("handleRoot()");
+    var requestObj = {}
+
+    requestObj.filename = "./web/index.html";
+    readHtmlFile(requestObj).then((requestObj)=>{
+        applyOktaConfigValues(requestObj).then((requestObj) => {
+            res.writeHead(200, { 'Content-Type': requestObj.contentType });
+            //console.log(res);
+            res.end(requestObj.data, "utf-8");
+        });
+    }).catch((error) => {
+        console.log(error);
+        res.statusCode = 200;
+        res.end("");
+    });
+}
+
+handleOidcCode = function(req, res) {
+    console.log("handleOidcCode()");
+    if (req.method == 'POST') {
+        var body = "";
+        req.on("data", function (data) {
+            body += data;
+        });
+        req.on("end", function () {
+            console.log("Body: " + body);
+            
+            formBody = qs.parse(body)
+            console.log("code: " + formBody.code);
+            
+            getOIDCTokens(formBody.code).then((results) => {
+                console.log(results);
+                var tokenResponse = JSON.parse(results);
+                res.writeHead(301, {
+                    "Location": process.env.appBaseUrl,
+                    "Set-Cookie": "access_token=" + tokenResponse.access_token,
+                    "Set-Cookie": "id_token=" + tokenResponse.id_token
+                });
+                res.end();
+            })
+        });
+    } else {
+        // redirect back to root
+        res.writeHead(301, {"Location": process.env.appBaseUrl});
+        res.end();
+    }
+}
+
+logOut = function(req, res) {
+    console.log("logOut()");
+    res.writeHead(301, {"Location": process.env.oktaOrg + "/login/signout?fromURI=" + process.env.appBaseUrl});
+    res.end();
+}
+
+progresiveProfile = function(req, res) {
+    console.log("progresiveProfile");
+    var requestObj = {}
+
+    requestObj.filename = "index.html"
+
+    //requestObj.requestAttributes (These are the attributes we want)
+    //requestObj.fragment (Fields we are going to add to form)
+    //requestObj.html (webpage w/ form)
+    //requestObj.userProfile (Okta User Profile)
+    //requestObj.require dAttributes (array of required Attributes according to Schema)
+
+    //todo: Need to get the UserID, I tested in statically
+    //requestObj.userid (guid or something to identify the User in Okta)
+
+    fakeGetJson ( requestObj). //get Schema from Okta
+        then ( getUserProfile ). //get Selected User Profile //todo: need to update to fetch Specific User profile
+        then ( requiredObjects). //find required attributes
+        then ( compareUserProfile). //compare it to user profile
+        then ( getFragments). //generate the fragments
+        then ( readHtmlFile). //pull html from filesystem
+        then ( (requestObj)=> { //replace {{fragment}} tag in HTML w/ new elements
+
+        res.end (requestObj.data.toString().replace(/{{fragment}}/g, requestObj.fragment))
+            // console.log(fragment)
+            // res.end(html);
+        }).catch ( (error)=> {
+            console.log(error)
+        });
+}
+
+displayDefault = function(req, res) {
+    var requestObj = {}
+    requestObj.filename = "./web" + req.url
+    
+    readHtmlFile(requestObj).then((requestObj) => {
+        res.writeHead(200, { 'Content-Type': requestObj.contentType });
+        res.end(requestObj.data, "utf-8");
+    }).catch((error) => {
+        console.log(error); 
+        res.statusCode = 200;
+        res.end("");
+    });
+}
 
 getOIDCTokens = function(code) {
     console.log("getOIDCTokens()");
