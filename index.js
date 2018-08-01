@@ -1,12 +1,13 @@
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
+var path = require('path');
 var request = require("request");
+var qs = require('querystring');
 
 // Environment variables required
 // oktaOrg = url okta org example: https://okta.okta.com
 // oktaKey = Okta api key
-
 
 if(!process.env.oktaOrg && !process.env.oktaKey  ) {
     console.log('environment variables not set, set them like this:');
@@ -16,70 +17,143 @@ if(!process.env.oktaOrg && !process.env.oktaKey  ) {
 }
 
 http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
+    //res.writeHead(200, {'Content-Type': 'text/html'});
     var q = url.parse(req.url, true).query;
     var txt = q.year + " " + q.month;
-    if (req.url == "/") {
+    
+    //Routing rules
+    console.log("Request URL: '" + req.url + "'");
+    switch(req.url) {
+        case "/":
+            var requestObj = {}
 
-        var requestObj = {}
-
-        requestObj.filename = "index.html"
-
-        //requestObj.requestAttributes (These are the attributes we want)
-        //requestObj.fragment (Fields we are going to add to form)
-        //requestObj.html (webpage w/ form)
-        //requestObj.userProfile (Okta User Profile)
-        //requestObj.require dAttributes (array of required Attributes according to Schema)
-
-        //todo: Need to get the UserID, I tested in statically
-        //requestObj.userid (guid or something to identify the User in Okta)
-
-        fakeGetJson ( requestObj). //get Schema from Okta
-            then ( getUserProfile ). //get Selected User Profile //todo: need to update to fetch Specific User profile
-            then ( requiredObjects). //find required attributes
-            then ( compareUserProfile). //compare it to user profile
-            then ( getFragments). //generate the fragments
-            then ( readHtmlFile). //pull html from filesystem
-            then ( (requestObj)=> { //replace {{fragment}} tag in HTML w/ new elements
-
-            res.end (requestObj.html.replace(/{{fragment}}/g, requestObj.fragment))
-
-                // console.log(fragment)
-
-
-                // res.end(html);
-
-            }).catch ( (error)=> {
-                console.log(error)
+            requestObj.filename = "./web/index.html";
+            readHtmlFile(requestObj).then((requestObj)=>{
+                applyOktaConfigValues(requestObj).then((requestObj) => {
+                    res.writeHead(200, { 'Content-Type': requestObj.contentType });
+                    //console.log(res);
+                    res.end(requestObj.data, "utf-8");
+                });
+            }).catch((error) => {
+                console.log(error);
+                res.statusCode = 200;
+                res.end("");
             });
+            
+            break;
+        case "/oidc":
+            
+            if (req.method == 'POST') {
+                var body = "";
+                req.on("data", function (data) {
+                    body += data;
+                });
+                req.on("end", function () {
+                    console.log("Body: " + body);
+                    
+                    formBody = qs.parse(body)
+                    console.log("code: " + formBody.code);
+                    
+                    getOIDCTokens(formBody.code).then((results) => {
+                        console.log(results);
+                        var tokenResponse = JSON.parse(results);
+                        res.writeHead(301, {
+                            "Location": process.env.appBaseUrl,
+                            "Set-Cookie": "access_token=" + tokenResponse.access_token,
+                            "Set-Cookie": "id_token=" + tokenResponse.id_token
+                        });
+                        res.end();
+                    })
+                });
+            } else {
+                // redirect back to root
+                res.writeHead(301, {"Location": process.env.appBaseUrl});
+                res.end();
+            }
+            
+            break;
+        case "/logout":
+            
+            res.writeHead(301, {"Location": process.env.oktaOrg + "/login/signout?fromURI=" + process.env.appBaseUrl});
+            res.end();
+            
+            break;
+        case "/test":
+            console.log("Patrick Test code");
+            var requestObj = {}
 
-
-        //todo: stubbed out fetching the profile from Okta
-
-        // getSchema({}).then((responseObj) => {
-        //     var customAttributes = JSON.parse(responseObj)
-        //     customAttributes = customAttributes.definitions
-        //
-        //     for (var key in obj) {
-        //         if (obj.hasOwnProperty(key)) {
-        //             var val = obj[key];
-        //             console.log(val);
-        //             walk(val);
-        //         }
-        //     }
-        //
-        //     res.end(responseObj.definitions.toString());
-        // }).catch ( (error)=> {
-        //     res.end(error.toString());
-        // })
-
-
-    } else {
-        res.end("bad");
-
+            requestObj.filename = "index.html"
+    
+            //requestObj.requestAttributes (These are the attributes we want)
+            //requestObj.fragment (Fields we are going to add to form)
+            //requestObj.html (webpage w/ form)
+            //requestObj.userProfile (Okta User Profile)
+            //requestObj.require dAttributes (array of required Attributes according to Schema)
+    
+            //todo: Need to get the UserID, I tested in statically
+            //requestObj.userid (guid or something to identify the User in Okta)
+    
+            fakeGetJson ( requestObj). //get Schema from Okta
+                then ( getUserProfile ). //get Selected User Profile //todo: need to update to fetch Specific User profile
+                then ( requiredObjects). //find required attributes
+                then ( compareUserProfile). //compare it to user profile
+                then ( getFragments). //generate the fragments
+                then ( readHtmlFile). //pull html from filesystem
+                then ( (requestObj)=> { //replace {{fragment}} tag in HTML w/ new elements
+    
+                res.end (requestObj.data.toString().replace(/{{fragment}}/g, requestObj.fragment))
+                    // console.log(fragment)
+                    // res.end(html);
+                }).catch ( (error)=> {
+                    console.log(error)
+                });
+            break;
+        default:
+            //NOTE: This will generically rout to the web folder for static html files
+            var requestObj = {}
+            requestObj.filename = "./web" + req.url
+            
+            readHtmlFile(requestObj).then((requestObj) => {
+                res.writeHead(200, { 'Content-Type': requestObj.contentType });
+                res.end(requestObj.data, "utf-8");
+            }).catch((error) => {
+                console.log(error); 
+                res.statusCode = 200;
+                res.end("");
+            });
     }
+    
 }).listen(process.env.PORT, process.env.IP);
 
+
+getOIDCTokens = function(code) {
+    console.log("getOIDCTokens()");
+    return new Promise((resolve, reject) => {
+        var url = process.env.oktaOrg+ "/oauth2/" + process.env.oktaAuthServerId + "/v1/token?" +
+            "grant_type=authorization_code&" + 
+            "code=" + code + "&" + 
+            "redirect_uri=" + process.env.oktaRedirectUri;
+            
+        console.log("token url: " + url);
+        
+        var options = {
+            "method": "POST",
+            "url": url,
+            "body": "authorization_code=" + code,
+            "headers": {
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": "Basic " + Buffer.from(process.env.oktaClientId + ":" + process.env.oktaClientSecret).toString("base64")
+            }
+        };
+        
+        request(options, function (error, response, body) {
+            if (error) reject ( error )
+            resolve(body);
+        });
+        
+    });
+}
 
 getSchema = function (requestObj) {
     return new Promise((resolve, reject) => {
@@ -902,27 +976,79 @@ compareUserProfile  = function ( requestObj ) {
 
 renderHtml  = function ( requestObj ) {
     return new Promise((resolve) => {
-        requestObj.html = "<html>"
+        requestObj.data = "<html>"
         for (var key in requestObj.requestAttributes) {
             if (requestObj.requestAttributes.hasOwnProperty(key)) {
                 var val = requestObj.requestAttributes[key];
                 // console.log(JSON.stringify(val));
-                requestObj.html +="<p>"+val.title+"<p/><br>"
+                requestObj.data +="<p>"+val.title+"<p/><br>"
             }
         }
-        requestObj.html +="</html>"
+        requestObj.data +="</html>"
         resolve(requestObj)
     })
 }
 
 readHtmlFile = function ( requestObj ) {
     return new Promise ( (resolve, reject)=> {
-        fs.readFile("index.html", function(err, data) {
+        
+        var extname = path.extname(requestObj.filename);
+        var contentType = 'text/html';
+        switch (extname) {
+            case '.js':
+                contentType = 'text/javascript';
+                break;
+            case '.css':
+                contentType = 'text/css';
+                break;
+            case '.json':
+                contentType = 'application/json';
+                break;
+            case '.png':
+                contentType = 'image/png';
+                break;      
+            case '.jpg':
+                contentType = 'image/jpg';
+                break;
+            case '.wav':
+                contentType = 'audio/wav';
+                break;
+        }
+
+        requestObj.contentType = contentType;
+        
+        //Enable for debugging
+        //console.log("requestObj.filename: " + requestObj.filename);
+        fs.readFile(requestObj.filename, function(err, data) {
             if ( err ) reject ( err )
-            requestObj.html = data.toString()
+            requestObj.data = data;
             resolve (requestObj)
         });
     })
+}
+
+applyOktaConfigValues = function (requestObj) {
+    return new Promise( (resolve, reject) => { 
+        var oktaConfig = {
+            "oktaOrg": process.env.oktaOrg,
+            "oktaClientId": process.env.oktaClientId,
+            "oktaRedirectUri": process.env.oktaRedirectUri,
+            "oktaAuthServerId": process.env.oktaAuthServerId
+        }
+        
+        console.log(oktaConfig);
+        
+        var tempHtml = requestObj.data.toString(); 
+        for (key in oktaConfig) {
+            if(oktaConfig.hasOwnProperty(key)) {
+                var val = oktaConfig[key];
+                tempHtml = tempHtml.replace(new RegExp("{{" + key + "}}", 'g'), val);
+            }
+        }
+        requestObj.data = tempHtml;
+        
+        resolve(requestObj);
+    });
 }
 
 getFragments = function ( requestObj ) {
