@@ -6,13 +6,29 @@ var request = require("request");
 var qs = require('querystring');
 
 // Environment variables required
-// oktaOrg = url okta org example: https://okta.okta.com
+// appBaseUrl = base URL for the application i.e. https://www.myapp.com
+// oktaAuthServerId = Okta Auth Server Id
+// oktaClientId = Okta OIDC app client Id
+// oktaClientSecret = Okta OIDC app client secret
 // oktaKey = Okta api key
+// oktaOrg = url okta org example: https://okta.okta.com
+// oktaRedirectUri = Redirect URL specified in Okta OIDC App
 
-if(!process.env.oktaOrg && !process.env.oktaKey  ) {
+if(!process.env.oktaOrg && 
+    !process.env.oktaKey  &&
+    !process.env.appBaseUrl &&
+    !process.env.oktaAuthServerId &&
+    !process.env.oktaClientId &&
+    !process.env.oktaClientSecret &&
+    !process.env.oktaRedirectUri) {
     console.log('environment variables not set, set them like this:');
+    console.log('export appBaseUrl="https://www.myapp.com"');
+    console.log('export oktaAuthServerId="yourOktaAuthServerId"');
+    console.log('export oktaClientId="yourOktaAppClientId"');
+    console.log('export oktaClientSecret="YourOktaAppClientSecret"');
     console.log('export oktaOrg="https://okta.okta.com"');
-    console.log('export oktaKey="yourOktaKey"');
+    console.log('export oktaKey="yourOktaAPIKey"');
+    console.log('export oktaRedirectUri="https://www.myapp.com/oidc"');
     return;
 }
 
