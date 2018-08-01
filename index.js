@@ -1068,7 +1068,8 @@ applyOktaConfigValues = function (requestObj) {
             "oktaOrg": process.env.oktaOrg,
             "oktaClientId": process.env.oktaClientId,
             "oktaRedirectUri": process.env.oktaRedirectUri,
-            "oktaAuthServerId": process.env.oktaAuthServerId
+            "oktaAuthServerId": process.env.oktaAuthServerId,
+            "appBaseUrl": process.env.appBaseUrl
         }
         
         console.log(oktaConfig);

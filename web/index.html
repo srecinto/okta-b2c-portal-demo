@@ -91,8 +91,9 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 		<div class="header_right">
 			<div class="login">
 				<ul>
-					<li><a href="#" data-toggle="modal" data-target="#myModal4"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Login</a></li>
-					<li><a href="#" data-toggle="modal" data-target="#myModal5"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Signup</a></li>
+					<li id="userprofile" style="display: none;"><a href="/userprofile">Firstname Lastname</a></li>
+					<li id="loginButton" style="display: none;"><a href="#" data-toggle="modal" data-target="#myModal4"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Login</a></li>
+					<li id="registerButton" style="display: none;"><a href="#" data-toggle="modal" data-target="#myModal5"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Signup</a></li>
 					<li>
 						<div class="search-bar">
 							<div class="search">		
@@ -542,12 +543,18 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                        "openid",
 							                        "profile"
 							                    ]
+							                },
+							                features: {
+							                    idpDiscovery: true
 							                }
 							            });
 							
 							            signIn.session.get(function(res) {
 							                if (res.status==='ACTIVE') {
 							                    console.log("Active");
+							                    $("#loginButton").hide();
+							                    $("#registerButton").hide();
+							                    $("#userprofile").show();
 							                    
 							                    var authClient = new OktaAuth({
 							                        url: '{{oktaOrg}}',
@@ -566,14 +573,21 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                    })
 							                    .then(function(err){
 							                        console.log(err);
-							                    })
+							                    });
+							            
 							                } else {
+							                	$("#loginButton").show();
+							                    $("#registerButton").show();
+							                    $("#userprofile").hide();
 							                    signIn.renderEl(
 							                        // Assumes there is an empty element on the page with an id of 'osw-container'
 							                        { el: '#widget-container' },
 							                        
 							                        function(res) {
-							                            
+							                            if (res.status === 'IDP_DISCOVERY') {
+							                                console.log("data: %s", JSON.stringify(res));
+							                                res.idpDiscovery.redirectToIdp('{{appBaseUrl}}');
+							                            }
 							                        }
 							        
 							                    );
