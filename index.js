@@ -32,16 +32,29 @@ if(!process.env.oktaOrg &&
     return;
 }
 
+var tokenizedValues = {
+    "oktaOrg": process.env.oktaOrg,
+    "oktaClientId": process.env.oktaClientId,
+    "oktaRedirectUri": process.env.oktaRedirectUri,
+    "oktaAuthServerId": process.env.oktaAuthServerId,
+    "appBaseUrl": process.env.appBaseUrl
+}
+
 http.createServer(function (req, res) {
     //Routing rules
     console.log("Request URL: '" + req.url + "'");
     switch(req.url) {
         case "/":
-            console.log("ROOT");
             handleRoot(req, res);
             break;
         case "/index.html":
             handleRoot(req, res);
+            break;
+        case "/about.html":
+        case "/codes.html":
+        case "/contact.html":
+        case "/gallery.html":
+            handlePage(req, res)
             break;
         case "/oidc":
             handleOidcCode(req, res);
@@ -61,13 +74,33 @@ http.createServer(function (req, res) {
     
 }).listen(process.env.PORT, process.env.IP);
 
+handlePage = function(req, res) {
+    console.log("handlePage()");
+    var requestObj = {}
+
+    requestObj.filename = "./web" + req.url;
+    readHtmlFile(requestObj).then( (requestObj) => {
+        applyFragment("fragmentHeader.html", requestObj).then( (requestObj) => {
+            applyTokenizedValues(tokenizedValues, requestObj).then((requestObj) => {
+                res.writeHead(200, { 'Content-Type': requestObj.contentType });
+                //console.log(res);
+                res.end(requestObj.data, "utf-8");
+            });
+        });
+    }).catch((error) => {
+        console.log(error);
+        res.statusCode = 200;
+        res.end("");
+    });
+}
+
 handleRoot = function(req, res) {
     console.log("handleRoot()");
     var requestObj = {}
 
     requestObj.filename = "./web/index.html";
     readHtmlFile(requestObj).then((requestObj)=>{
-        applyOktaConfigValues(requestObj).then((requestObj) => {
+        applyTokenizedValues(tokenizedValues, requestObj).then((requestObj) => {
             res.writeHead(200, { 'Content-Type': requestObj.contentType });
             //console.log(res);
             res.end(requestObj.data, "utf-8");
@@ -1063,22 +1096,14 @@ readHtmlFile = function ( requestObj ) {
     })
 }
 
-applyOktaConfigValues = function (requestObj) {
+applyTokenizedValues = function (values, requestObj) {
     return new Promise( (resolve, reject) => { 
-        var oktaConfig = {
-            "oktaOrg": process.env.oktaOrg,
-            "oktaClientId": process.env.oktaClientId,
-            "oktaRedirectUri": process.env.oktaRedirectUri,
-            "oktaAuthServerId": process.env.oktaAuthServerId,
-            "appBaseUrl": process.env.appBaseUrl
-        }
-        
-        console.log(oktaConfig);
+        console.log(values);
         
         var tempHtml = requestObj.data.toString(); 
-        for (key in oktaConfig) {
-            if(oktaConfig.hasOwnProperty(key)) {
-                var val = oktaConfig[key];
+        for (key in values) {
+            if(values.hasOwnProperty(key)) {
+                var val = values[key];
                 tempHtml = tempHtml.replace(new RegExp("{{" + key + "}}", 'g'), val);
             }
         }
@@ -1108,6 +1133,25 @@ getFragments = function ( requestObj ) {
             resolve ( requestObj )
         });
     })
+}
+
+applyFragment = function (fragmentFileName, requestObj) {
+    console.log("applyFragment() " + fragmentFileName);
+    return new Promise((resolve, reject) => {
+        fs.readFile(fragmentFileName, function(err, fragment) {
+            if ( err ) reject ( err )
+
+            var values = {};
+            values[fragmentFileName] = fragment.toString();
+            
+            console.log(values);
+            
+            applyTokenizedValues(values, requestObj).then((requestObj) => {
+                resolve ( requestObj )
+            });
+            
+        });
+    });
 }
 
 
