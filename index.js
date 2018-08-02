@@ -43,7 +43,15 @@ var tokenizedValues = {
 http.createServer(function (req, res) {
     //Routing rules
     console.log("Request URL: '" + req.url + "'");
-    switch(req.url) {
+    var parsedUrl = req.url;
+    var queryParamIndex = parsedUrl.indexOf("?");
+    
+    if(queryParamIndex != -1) {
+        parsedUrl = parsedUrl.substr(0, queryParamIndex);
+    }
+    
+    console.log("Parsed URL: " + parsedUrl);
+    switch(parsedUrl) {
         case "/":
             handleRoot(req, res);
             break;
