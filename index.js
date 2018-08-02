@@ -97,7 +97,7 @@ handleOidcCode = function(req, res) {
                 var tokenResponse = JSON.parse(results);
                 res.writeHead(302, {
                     "Location": process.env.appBaseUrl,
-                    "Set-Cookie": ["access_token=" + tokenResponse.access_token, "id_token=" + tokenResponse.id_token]
+                    "Set-Cookie": ["token_response=" + tokenResponse.access_token, "id_token=" + tokenResponse.id_token]
                 });
                 res.end();
             })
