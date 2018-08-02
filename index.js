@@ -94,14 +94,66 @@ handleCreateUser = function(req, res) {
         
         req.on("end", function () {
             console.log("jsonReqest: " + jsonReqest);
+            var parsedJsonRequest = JSON.parse(jsonReqest);
+            
             // return JSON
-    
             var jsonResponse = {
-                "success": false
+                "success": false,
+                "message": ""
             }
             
-            res.writeHead(200, { 'Content-Type': "application/json" });
-            res.end(JSON.stringify(jsonResponse), "utf-8");
+            if(parsedJsonRequest.password == parsedJsonRequest.confirmPassword) {
+                var oktaCreateUserJSON = {
+                    "profile": {
+                        "firstName": parsedJsonRequest.firstName,
+                        "lastName": parsedJsonRequest.lastName,
+                        "email": parsedJsonRequest.email,
+                        "login": parsedJsonRequest.email
+                    },
+                    "credentials": {
+                        "password": {"value": parsedJsonRequest.password}
+                    }
+                }
+                
+                // Call Okta
+                var options = {
+                    "method": "POST",
+                    "url": process.env.oktaOrg + "/api/v1/users?activate=true",
+                    "body": JSON.stringify(oktaCreateUserJSON),
+                    "headers": {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": "SSWS " + process.env.oktaKey
+                    }
+                };
+                
+                request(options, function (error, response, body) {
+                    console.log("Called Okta Create User");
+                    
+                    if (error) {
+                        console.log("Error!");
+                        console.log(error);
+                        jsonResponse.error = error;
+                        jsonResponse.message = "Failed to create user.";
+                        jsonResponse.response = body;
+                    } else {
+                        console.log("No Server Error but possible Okta Error");
+                        //console.log(body);
+                        jsonResponse.success = true;
+                        jsonResponse.message = "Successfully created user!";
+                        jsonResponse.response = JSON.parse(body);
+                        
+                        //console.log(jsonResponse);
+                    }
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify(jsonResponse), "utf-8");
+                });
+            } else {
+                jsonResponse.message = "Passwords do not match"
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify(jsonResponse), "utf-8");
+            }
+            
         });
     }
 }

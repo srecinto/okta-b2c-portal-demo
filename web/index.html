@@ -699,7 +699,12 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 														success: function(requestData) {
 														    console.log("createuser response");
 														    console.log(requestData);
-														    
+														    if(requestData.success) {
+														    	console.log("SUCCESS!!!");
+														    	location.reload();
+														    } else {
+														    	alert(requestData.message);
+														    }
 														}
 													});
 												});
