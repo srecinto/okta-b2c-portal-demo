@@ -56,6 +56,9 @@ http.createServer(function (req, res) {
         case "/gallery.html":
             handlePage(req, res)
             break;
+        case "/userprofile":
+            handleUserProfile(req, res)
+            break;
         case "/oidc":
             handleOidcCode(req, res);
             break;
@@ -73,6 +76,26 @@ http.createServer(function (req, res) {
     }
     
 }).listen(process.env.PORT, process.env.IP);
+
+handleUserProfile = function(req, res) {
+    console.log("handleUserProfile()");
+    var requestObj = {}
+
+    requestObj.filename = "./web/userprofile.html";
+    readHtmlFile(requestObj).then((requestObj)=>{
+        applyFragment("fragmentHeader.html", requestObj).then( (requestObj) => {
+            applyTokenizedValues(tokenizedValues, requestObj).then((requestObj) => {
+                res.writeHead(200, { 'Content-Type': requestObj.contentType });
+                //console.log(res);
+                res.end(requestObj.data, "utf-8");
+            });
+        });
+    }).catch((error) => {
+        console.log(error);
+        res.statusCode = 200;
+        res.end("");
+    });
+}
 
 handlePage = function(req, res) {
     console.log("handlePage()");
@@ -1144,7 +1167,7 @@ applyFragment = function (fragmentFileName, requestObj) {
             var values = {};
             values[fragmentFileName] = fragment.toString();
             
-            console.log(values);
+            //console.log(values);
             
             applyTokenizedValues(values, requestObj).then((requestObj) => {
                 resolve ( requestObj )
