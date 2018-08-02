@@ -92,6 +92,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 			<div class="login">
 				<ul>
 					<li id="userprofile" style="display: none;"><a href="/userprofile">Firstname Lastname</a></li>
+					<li id="logoutButton" style="display: none;"><a href="/logout">Logout</a></li>
 					<li id="loginButton" style="display: none;"><a href="#" data-toggle="modal" data-target="#myModal4"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Login</a></li>
 					<li id="registerButton" style="display: none;"><a href="#" data-toggle="modal" data-target="#myModal5"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Signup</a></li>
 					<li>
@@ -555,6 +556,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                    $("#loginButton").hide();
 							                    $("#registerButton").hide();
 							                    $("#userprofile").show();
+							                    $("#logoutButton").show();
 							                    
 							                    var authClient = new OktaAuth({
 							                        url: '{{oktaOrg}}',
@@ -579,6 +581,8 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                	$("#loginButton").show();
 							                    $("#registerButton").show();
 							                    $("#userprofile").hide();
+							                    $("#logoutButton").hide();
+							                    
 							                    signIn.renderEl(
 							                        // Assumes there is an empty element on the page with an id of 'osw-container'
 							                        { el: '#widget-container' },

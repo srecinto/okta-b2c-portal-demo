@@ -33,14 +33,13 @@ if(!process.env.oktaOrg &&
 }
 
 http.createServer(function (req, res) {
-    //res.writeHead(200, {'Content-Type': 'text/html'});
-    //var q = url.parse(req.url, true).query;
-    //var txt = q.year + " " + q.month;
-    
     //Routing rules
     console.log("Request URL: '" + req.url + "'");
     switch(req.url) {
         case "/":
+            console.log("ROOT");
+            handleRoot(req, res);
+            break;
         case "/index.html":
             handleRoot(req, res);
             break;
@@ -48,6 +47,7 @@ http.createServer(function (req, res) {
             handleOidcCode(req, res);
             break;
         case "/logout":
+            console.log("HERE");
             logOut(req, res);
             break;
         case "/test":
@@ -95,25 +95,26 @@ handleOidcCode = function(req, res) {
             getOIDCTokens(formBody.code).then((results) => {
                 console.log(results);
                 var tokenResponse = JSON.parse(results);
-                res.writeHead(301, {
+                res.writeHead(302, {
                     "Location": process.env.appBaseUrl,
-                    "Set-Cookie": "access_token=" + tokenResponse.access_token,
-                    "Set-Cookie": "id_token=" + tokenResponse.id_token
+                    "Set-Cookie": ["access_token=" + tokenResponse.access_token, "id_token=" + tokenResponse.id_token]
                 });
                 res.end();
             })
         });
     } else {
         // redirect back to root
-        res.writeHead(301, {"Location": process.env.appBaseUrl});
+        res.writeHead(302, {"Location": process.env.appBaseUrl});
         res.end();
     }
 }
 
 logOut = function(req, res) {
     console.log("logOut()");
-    res.writeHead(301, {"Location": process.env.oktaOrg + "/login/signout?fromURI=" + process.env.appBaseUrl});
-    res.end();
+    res.writeHead(200, { 
+        "Set-Cookie": ["access_token=", "id_token="]
+    });
+    res.end("<script>location.href='" + process.env.oktaOrg + "/login/signout?fromURI=" + process.env.appBaseUrl + "';</script>");
 }
 
 progresiveProfile = function(req, res) {
