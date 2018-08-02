@@ -54,10 +54,13 @@ http.createServer(function (req, res) {
         case "/codes.html":
         case "/contact.html":
         case "/gallery.html":
-            handlePage(req, res)
+            handlePage(req, res);
             break;
         case "/userprofile":
-            handleUserProfile(req, res)
+            handleUserProfile(req, res);
+            break;
+        case "/createuser":
+            handleCreateUser(req, res);
             break;
         case "/oidc":
             handleOidcCode(req, res);
@@ -76,6 +79,32 @@ http.createServer(function (req, res) {
     }
     
 }).listen(process.env.PORT, process.env.IP);
+
+
+handleCreateUser = function(req, res) {
+    console.log("handleCreateUser()");
+    
+    //Reas JSON request
+    if (req.method == 'POST') {
+        var jsonReqest = "";
+        
+        req.on("data", function (data) {
+            jsonReqest += data;
+        });
+        
+        req.on("end", function () {
+            console.log("jsonReqest: " + jsonReqest);
+            // return JSON
+    
+            var jsonResponse = {
+                "success": false
+            }
+            
+            res.writeHead(200, { 'Content-Type': "application/json" });
+            res.end(JSON.stringify(jsonResponse), "utf-8");
+        });
+    }
+}
 
 handleUserProfile = function(req, res) {
     console.log("handleUserProfile()");

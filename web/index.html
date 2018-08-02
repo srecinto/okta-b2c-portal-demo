@@ -655,22 +655,55 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 										<h3>Sign up for free</h3>
 										<form action="#" method="post">
 											<div class="sign-up">
+												<h4>First Name :</h4>
+												<input id="regFirstName" type="text" name="Type here" value="Type here" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Type here';}" required="">	
+											</div>
+											<div class="sign-up">
+												<h4>Last Name :</h4>
+												<input id="regLastName" type="text" name="Type here" value="Type here" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Type here';}" required="">	
+											</div>
+											<div class="sign-up">
 												<h4>Email :</h4>
-												<input type="text" name="Type here" value="Type here" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Type here';}" required="">	
+												<input id="regEmail" type="text" name="Type here" value="Type here" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Type here';}" required="">	
 											</div>
 											<div class="sign-up">
 												<h4>Password :</h4>
-												<input type="password" name="Password" value="Password" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Password';}" required="">
+												<input id="regPassword" type="password" name="Password" value="Password" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Password';}" required="">
 												
 											</div>
 											<div class="sign-up">
 												<h4>Re-type Password :</h4>
-												<input type="password" name="Password" value="Password" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Password';}" required="">
+												<input id="regConfirmPassword" type="password" name="Password" value="Password" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Password';}" required="">
 												
 											</div>
 											<div class="sign-up">
-												<input type="submit" value="REGISTER NOW" >
+												<input id="regSubmit" type="button" value="REGISTER NOW" >
 											</div>
+											<script>
+												$("#regSubmit").on("click", (event) => {
+													console.log("regSubmit.click()");
+													var submissionRequest = {
+														"firstName": $("#regFirstName").val(),
+														"lastName": $("#regLastName").val(),
+														"email": $("#regEmail").val(),
+														"password": $("#regPassword").val(),
+														"confirmPassword": $("#regConfirmPassword").val(),
+													}
+													
+													$.ajax({
+														url: "/createuser",
+														type: "POST",
+														contentType: "application/json",
+														data: JSON.stringify(submissionRequest),
+														dataType: "json",
+														success: function(requestData) {
+														    console.log("createuser response");
+														    console.log(requestData);
+														    
+														}
+													});
+												});
+											</script>
 											
 										</form>
 									</div>
