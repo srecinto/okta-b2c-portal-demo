@@ -96,14 +96,56 @@ handleProgressiveProfile = function(req, res) {
     console.log("handleProgressiveProfile()");
     
     // Update profile to decrement by one so as to not keep nagging user
-    // Pull json down for display
-    var jsonResponse = {
-        "success": false,
-        "message": ""
-    }
+    //TODO: push this into a function
     
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(jsonResponse), "utf-8");
+    var id_token = getCookie(req, "id_token");
+    var oktaUser = parseIdToken(id_token).sub;
+    
+    // Call Okta
+    var options = {
+        "method": "GET",
+        "url": process.env.oktaOrg + "/api/v1/apps/" + process.env.oktaAppId + "/users/" + oktaUser,
+        "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": "SSWS " + process.env.oktaKey
+        }
+    };
+    
+    request(options, function (error, response, body) {
+        console.log("Called Okta Get App User Profile");
+        console.log(body);
+        jsonAppUserProfile = JSON.parse(body);
+        jsonAppUserProfile.profile.currentNumLogins--;
+        
+        var options = {
+            "method": "POST",
+            "url": process.env.oktaOrg + "/api/v1/apps/" + process.env.oktaAppId + "/users/" + oktaUser,
+            "body": JSON.stringify(jsonAppUserProfile),
+            "headers": {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": "SSWS " + process.env.oktaKey
+            }
+        };
+        
+        request(options, function (error, response, body) {
+            console.log("Called Okta Update App User Profile");
+            //TODO: Handle errors
+            console.log("body")
+            // Pull json down for display
+            var jsonResponse = {
+                "success": false,
+                "message": ""
+            }
+            
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(jsonResponse), "utf-8");
+        });
+        
+    });
+    
+    
 }
 
 
@@ -1372,4 +1414,15 @@ parseIdToken = function(rawIdToken) {
     console.log(idToken);
     
     return JSON.parse(idToken);
+}
+
+function getCookie (request, cookieKey) {
+    var list = {},
+        rc = request.headers.cookie;
+
+    rc && rc.split(';').forEach(function( cookie ) {
+        var parts = cookie.split('=');
+        list[parts.shift().trim()] = decodeURI(parts.join('='));
+    });
+    return list[cookieKey];
 }
