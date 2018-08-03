@@ -94,6 +94,9 @@ http.createServer(function (req, res) {
 
 handleProgressiveProfile = function(req, res) {
     console.log("handleProgressiveProfile()");
+    
+    // Update profile to decrement by one so as to not keep nagging user
+    // Pull json down for display
     var jsonResponse = {
         "success": false,
         "message": ""

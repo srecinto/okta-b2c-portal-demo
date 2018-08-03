@@ -600,6 +600,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 																success: function(requestData) {
 																	console.log("progressive profile response");
 													    			console.log(requestData);
+													    			$("#myModal6").modal('show');
 																}
 													    	});
 													    }
@@ -756,6 +757,65 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 				</div>
 			</div>
 <!-- //login -->
+<!-- progressive profile -->
+			<div class="modal fade" id="myModal6" tabindex="-1" role="dialog" >
+				<div class="modal-dialog" role="document">
+					<div class="modal-content modal-info">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>						
+						</div>
+						<div class="modal-body modal-spa">
+							<div class="login-grids">
+									<div class="login-bottom">
+										<h3>We still need some info from you!</h3>
+										<form action="#" method="post">
+											<div class="sign-up">
+												<h4>Customer Id:</h4>
+												<input id="saveCustomerId" type="text" name="Type here" value="Type here" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Type here';}" required="">	
+											</div>
+											<div class="sign-up">
+												<input id="saveSubmit" type="button" value="Save Info" >
+											</div>
+											<script>
+												$("#saveSubmit").on("click", (event) => {
+													console.log("regSubmit.click()");
+													var submissionRequest = {
+														"firstName": $("#regFirstName").val(),
+														"lastName": $("#regLastName").val(),
+														"email": $("#regEmail").val(),
+														"password": $("#regPassword").val(),
+														"confirmPassword": $("#regConfirmPassword").val(),
+													}
+													
+													$.ajax({
+														url: "/saveuser",
+														type: "POST",
+														contentType: "application/json",
+														data: JSON.stringify(submissionRequest),
+														dataType: "json",
+														success: function(requestData) {
+														    console.log("createuser response");
+														    console.log(requestData);
+														    if(requestData.success) {
+														    	console.log("SUCCESS!!!");
+														    	alert("You account has been successfully created! Please sign in to access more features.");
+														    	location.reload();
+														    } else {
+														    	alert(requestData.message);
+														    }
+														}
+													});
+												});
+											</script>
+											
+										</form>
+									</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+<!-- //progressive profile -->
 <script type="text/javascript" src="js/bootstrap-3.1.1.min.js"></script>
 </body>
 </html>
