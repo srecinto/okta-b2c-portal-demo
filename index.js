@@ -250,8 +250,8 @@ handleOidcCode = function(req, res) {
             formBody = qs.parse(body)
             console.log("code: " + formBody.code);
             
-            getOIDCTokens(formBody.code).then((results) => {
-                console.log(results);
+            getOIDCTokens(formBody.code).then(incrementProgressiveProfileLogin).then((results) => {
+                //console.log(results);
                 var tokenResponse = JSON.parse(results);
                 res.writeHead(302, {
                     "Location": process.env.appBaseUrl,
@@ -323,13 +323,79 @@ displayDefault = function(req, res) {
 incrementProgressiveProfileLogin = function(body) {
     console.log("incrementProgressiveProfileLogin");
     return new Promise((resolve, reject) => {
-        var json = JSON.parse(body);
+        try {
+            var resolveBody = body;
+            var json = JSON.parse(body);
+            
+            console.log("ID_TOKEN");
+            //console.log(json.id_token);
+            //TODO: Introspect toke to make sure it is valid
+            var tempIdToken = json.id_token;
+            //console.log("tempIdToken: " + tempIdToken);
+            tempIdToken = tempIdToken.substr(tempIdToken.indexOf(".") + 1, tempIdToken.length);
+            //console.log("tempIdToken: " + tempIdToken);
+            tempIdToken = tempIdToken.substr(0, tempIdToken.indexOf("."));
+            //console.log("tempIdToken: " + tempIdToken);
+            var idToken = new Buffer(tempIdToken, 'base64').toString("utf-8");
+            console.log(idToken);
+            var idTokenJSON = JSON.parse(idToken);
+            var oktaUser = idTokenJSON.sub;
+            console.log("UserId: " + oktaUser);
+            
+            // Call Okta
+            var options = {
+                "method": "GET",
+                "url": process.env.oktaOrg + "/api/v1/apps/" + process.env.oktaAppId + "/users/" + oktaUser,
+                "headers": {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": "SSWS " + process.env.oktaKey
+                }
+            };
+            
+            request(options, function (error, response, body) {
+                console.log("Called Okta Get App User Profile");
+                var updateAppUserProfile = false;
+                var jsonAppUserProfile = JSON.parse(body);
+                
+                if(isNaN(jsonAppUserProfile.profile.currentNumLogins)) {
+                    jsonAppUserProfile.profile.currentNumLogins = 1;
+                    updateAppUserProfile = true;
+                } else {
+                    if(jsonAppUserProfile.profile.currentNumLogins <= jsonAppUserProfile.profile.promptAfterNumLogins) {
+                        jsonAppUserProfile.profile.currentNumLogins++;
+                        updateAppUserProfile = true;
+                    }
+                }
+                
+                if(updateAppUserProfile) {
+                    var options = {
+                        "method": "POST",
+                        "url": process.env.oktaOrg + "/api/v1/apps/" + process.env.oktaAppId + "/users/" + oktaUser,
+                        "body": JSON.stringify(jsonAppUserProfile),
+                        "headers": {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "Authorization": "SSWS " + process.env.oktaKey
+                        }
+                    };
+                    
+                    request(options, function (error, response, body) {
+                        console.log("Called Okta Update App User Profile");
+                        //TODO: Handle errors
+                        console.log("body")
+                        resolve(resolveBody);
+                    });
+                } else {
+                    resolve(resolveBody);
+                }
+                
+                
+            });
+        } catch (err) {
+            reject(err);
+        }
         
-        console.log("ID_TOKEN");
-        console.log(json.id_token);
-        
-        
-        resolve(body);
     });
 }
 
@@ -357,7 +423,7 @@ getOIDCTokens = function(code) {
         request(options, function (error, response, body) {
             if (error) reject ( error )
             //console.log(body);
-            incrementProgressiveProfileLogin(body).then(resolve(body));
+            resolve(body)
         });
         
     });
@@ -1235,7 +1301,7 @@ readHtmlFile = function ( requestObj ) {
 
 applyTokenizedValues = function (values, requestObj) {
     return new Promise( (resolve, reject) => { 
-        console.log(values);
+        //console.log(values);
         
         var tempHtml = requestObj.data.toString(); 
         for (key in values) {
