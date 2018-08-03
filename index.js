@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var request = require("request");
 var qs = require('querystring');
+var decode = require('urldecode')
 
 // Environment variables required
 // appBaseUrl = base URL for the application i.e. https://www.myapp.com
@@ -87,6 +88,9 @@ http.createServer(function (req, res) {
             break;
         case "/test":
             progresiveProfile(req, res);
+            break;
+        case "/saml":
+            samlExtensibility(req, res);
             break;
         default:
             //NOTE: This will generically rout to the web folder for static html files
@@ -412,6 +416,49 @@ handleRoot = function(req, res) {
         res.statusCode = 200;
         res.end("");
     });
+}
+
+samlExtensibility = function(req, res) {
+    console.log("samlExtensibility()");
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk.toString();
+    });
+    req.on('end', () => {
+        body=body.split("&")
+        body = body[0].split("=")
+        body = body[1]
+        body = decode(body) //url decode
+        let buff = new Buffer(body, 'base64'); //base 64decode
+        let data = buff.toString()
+
+        content = data.toString().split("<saml2:AttributeValue")
+        content = content[1].split(">")
+        content = content[1].split("<")
+        content = content[0]
+
+        console.log("Your patient id is: " +content);
+        
+        var requestObj = {};
+        
+        tokenizedValues.patientId = content;
+
+        requestObj.filename = "./web/saml.html";
+        readHtmlFile(requestObj).then((requestObj)=>{
+            applyFragment("fragmentHeader.html", requestObj).then( (requestObj) => {
+                applyTokenizedValues(tokenizedValues, requestObj).then((requestObj) => {
+                    res.writeHead(200, { 'Content-Type': requestObj.contentType });
+                    //console.log(res);
+                    res.end(requestObj.data, "utf-8");
+                });
+            });
+        }).catch((error) => {
+            console.log(error);
+            res.statusCode = 200;
+            res.end("");
+        });
+    });
+
 }
 
 handleOidcCode = function(req, res) {
