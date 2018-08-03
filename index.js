@@ -17,12 +17,14 @@ var qs = require('querystring');
 if(!process.env.oktaOrg && 
     !process.env.oktaKey  &&
     !process.env.appBaseUrl &&
+    !process.env.oktaAppId &&
     !process.env.oktaAuthServerId &&
     !process.env.oktaClientId &&
     !process.env.oktaClientSecret &&
     !process.env.oktaRedirectUri) {
     console.log('environment variables not set, set them like this:');
     console.log('export appBaseUrl="https://www.myapp.com"');
+    console.log('export oktaAppId="Okta app Id this app corrisponds to"');
     console.log('export oktaAuthServerId="yourOktaAuthServerId"');
     console.log('export oktaClientId="yourOktaAppClientId"');
     console.log('export oktaClientSecret="YourOktaAppClientSecret"');
