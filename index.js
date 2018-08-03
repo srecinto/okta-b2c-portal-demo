@@ -70,6 +70,8 @@ http.createServer(function (req, res) {
         case "/createuser":
             handleCreateUser(req, res);
             break;
+        case "/progrssiveprofile":
+            handleProgressiveProfile(req, res);
         case "/oidc":
             handleOidcCode(req, res);
             break;
@@ -87,6 +89,17 @@ http.createServer(function (req, res) {
     }
     
 }).listen(process.env.PORT, process.env.IP);
+
+handleProgressiveProfile = function(req, res) {
+    console.log("handleProgressiveProfile()");
+    var jsonResponse = {
+        "success": false,
+        "message": ""
+    }
+    
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(jsonResponse), "utf-8");
+}
 
 
 handleCreateUser = function(req, res) {
@@ -344,9 +357,7 @@ getSchema = function (requestObj) {
             url: 'https://companyx.okta.com/api/v1/meta/schemas/user/default',
             headers:
                 {
-                    'postman-token': 'b79652df-ed9d-e8fb-4606-64dca1166f52',
-                    'cache-control': 'no-cache',
-                    authorization: 'SSWS 00dpe4hYVZ-4EOixZ8uFmWx0zzdhu563-BixRvgx04', //todo: Key Deleted
+                    authorization: 'SSWS ' + process.env.oktaKey,
                     'content-type': 'application/json',
                     accept: 'application/json'
                 }
