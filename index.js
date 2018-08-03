@@ -72,8 +72,12 @@ http.createServer(function (req, res) {
         case "/createuser":
             handleCreateUser(req, res);
             break;
+        case "/saveuser":
+            handleSaveUser(req, res);
+            break;
         case "/progrssiveprofile":
             handleProgressiveProfile(req, res);
+            break;
         case "/oidc":
             handleOidcCode(req, res);
             break;
@@ -154,25 +158,39 @@ handleProgressiveProfile = function(req, res) {
                 var user = JSON.parse(body);
                 jsonResponse.userId = user.id;
                 
-                console.log("user.profile.customer_id: " + user.profile.customer_id);
+                var url =  process.env.oktaOrg + "/api/v1/users/" + user.id;
+                console.log("url:" + url);
                 
-                if(user.profile.customer_id) {
-                    jsonResponse.success = true;
-                }
+                // Call Okta
+                var options = {
+                    "method": "GET",
+                    "url": url,
+                    "headers": {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": "SSWS " + process.env.oktaKey
+                    }
+                };
                 
-                console.log("stringJsonResponse: " + stringJsonResponse);
+                request(options, function (error, response, body) {
+                    console.log("Called Okta Get User");
+                    console.log(body);
+                    var user = JSON.parse(body);
                 
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify(jsonResponse), "utf-8");
+                    console.log("user.profile.customer_id: " + user.profile.customer_id);
+                    if(user.profile.customer_id) {
+                        jsonResponse.success = true;
+                    }
+                    
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify(jsonResponse), "utf-8");
+                });
             });
 
             
         });
         
     });
-    
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(jsonResponse), "utf-8");
 }
 
 
@@ -250,6 +268,91 @@ handleCreateUser = function(req, res) {
             }
             
         });
+    }
+}
+
+handleSaveUser = function(req, res) {
+    console.log("handleSaveUser()");
+    
+    var jsonResponse = {
+        "success": false,
+        "message": ""
+    }
+    
+    
+    if (req.method == 'POST') {
+        var jsonReqest = "";
+        
+        req.on("data", function (data) {
+            jsonReqest += data;
+        });
+        
+        req.on("end", function () {
+            console.log("jsonReqest: " + jsonReqest);
+            var parsedJsonRequest = JSON.parse(jsonReqest);
+            
+            // return JSON
+            var jsonResponse = {
+                "success": false,
+                "message": ""
+            }
+            
+            if(parsedJsonRequest.password == parsedJsonRequest.confirmPassword) {
+                var oktaSaveUserJSON = {
+                    "profile": {
+                        "customer_id": parsedJsonRequest.customerId
+                    }
+                }
+                
+                var id_token = getCookie(req, "id_token");
+                var oktaUserId = parseIdToken(id_token).sub;
+                var url =  process.env.oktaOrg + "/api/v1/users/" + oktaUserId;
+                console.log("url:" + url);
+                
+                // Call Okta
+                var options = {
+                    "method": "POST",
+                    "url": url,
+                    "body": JSON.stringify(oktaSaveUserJSON),
+                    "headers": {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "Authorization": "SSWS " + process.env.oktaKey
+                    }
+                };
+                
+                request(options, function (error, response, body) {
+                    console.log("Called Okta Update User");
+                    
+                    if (error) {
+                        console.log("Error!");
+                        console.log(error);
+                        jsonResponse.error = error;
+                        jsonResponse.message = "Failed to update user.";
+                        jsonResponse.response = body;
+                    } else {
+                        console.log("No Server Error but possible Okta Error");
+                        //console.log(body);
+                        jsonResponse.success = true;
+                        jsonResponse.message = "Successfully updated user!";
+                        jsonResponse.response = JSON.parse(body);
+                        
+                        console.log(jsonResponse);
+                    }
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify(jsonResponse), "utf-8");
+                });
+            } else {
+                jsonResponse.message = "Passwords do not match"
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify(jsonResponse), "utf-8");
+            }
+            
+        });
+    } else {
+        jsonResponse.message = "Failed to save user";
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(jsonResponse), "utf-8");
     }
 }
 

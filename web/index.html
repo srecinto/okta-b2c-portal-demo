@@ -781,7 +781,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 											</div>
 											<script>
 												$("#saveSubmit").on("click", (event) => {
-													console.log("regSubmit.click()");
+													console.log("saveSubmit.click()");
 													var submissionRequest = {
 														"customerId": $("#saveCustomerId").val()
 													}
@@ -798,7 +798,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 														    if(requestData.success) {
 														    	console.log("SUCCESS!!!");
 														    	alert("Thank you! Your account has been updated");
-														    	location.reload();
+														    	$("#myModal6").modal('hide');
 														    } else {
 														    	alert(requestData.message);
 														    }
