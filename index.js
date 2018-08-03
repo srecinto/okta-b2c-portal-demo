@@ -94,12 +94,16 @@ http.createServer(function (req, res) {
 
 handleProgressiveProfile = function(req, res) {
     console.log("handleProgressiveProfile()");
-    
     // Update profile to decrement by one so as to not keep nagging user
     //TODO: push this into a function
     
     var id_token = getCookie(req, "id_token");
     var oktaUser = parseIdToken(id_token).sub;
+    // Pull json down for display
+    var jsonResponse = {
+        "success": false,
+        "message": ""
+    }
     
     // Call Okta
     var options = {
@@ -115,6 +119,7 @@ handleProgressiveProfile = function(req, res) {
     request(options, function (error, response, body) {
         console.log("Called Okta Get App User Profile");
         console.log(body);
+        
         jsonAppUserProfile = JSON.parse(body);
         jsonAppUserProfile.profile.currentNumLogins--;
         
@@ -133,19 +138,41 @@ handleProgressiveProfile = function(req, res) {
             console.log("Called Okta Update App User Profile");
             //TODO: Handle errors
             console.log("body")
-            // Pull json down for display
-            var jsonResponse = {
-                "success": false,
-                "message": ""
-            }
             
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify(jsonResponse), "utf-8");
+            var options = {
+                "method": "GET",
+                "url": process.env.oktaOrg + "/api/v1/apps/" + process.env.oktaAppId + "/users/" + oktaUser,
+                "headers": {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": "SSWS " + process.env.oktaKey
+                }
+            };
+            
+            request(options, function (error, response, body) {
+                console.log("Called Okta Get User Profile");
+                var user = JSON.parse(body);
+                jsonResponse.userId = user.id;
+                
+                console.log("user.profile.customer_id: " + user.profile.customer_id);
+                
+                if(user.profile.customer_id) {
+                    jsonResponse.success = true;
+                }
+                
+                console.log("stringJsonResponse: " + stringJsonResponse);
+                
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify(jsonResponse), "utf-8");
+            });
+
+            
         });
         
     });
     
-    
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(jsonResponse), "utf-8");
 }
 
 

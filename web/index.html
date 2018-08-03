@@ -597,10 +597,13 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 																url: "/progrssiveprofile",
 																type: "GET",
 														    	contentType: "application/json",
-																success: function(requestData) {
+																success: function(progProfData) {
 																	console.log("progressive profile response");
-													    			console.log(requestData);
-													    			$("#myModal6").modal('show');
+													    			console.log(progProfData);
+													    			
+													    			if(!progProfData.success) {
+													    				$("#myModal6").modal('show');
+													    			}
 																}
 													    	});
 													    }
@@ -780,11 +783,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 												$("#saveSubmit").on("click", (event) => {
 													console.log("regSubmit.click()");
 													var submissionRequest = {
-														"firstName": $("#regFirstName").val(),
-														"lastName": $("#regLastName").val(),
-														"email": $("#regEmail").val(),
-														"password": $("#regPassword").val(),
-														"confirmPassword": $("#regConfirmPassword").val(),
+														"customerId": $("#saveCustomerId").val()
 													}
 													
 													$.ajax({
@@ -798,7 +797,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 														    console.log(requestData);
 														    if(requestData.success) {
 														    	console.log("SUCCESS!!!");
-														    	alert("You account has been successfully created! Please sign in to access more features.");
+														    	alert("Thank you! Your account has been updated");
 														    	location.reload();
 														    } else {
 														    	alert(requestData.message);
