@@ -552,7 +552,8 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                },
 							                features: {
 							                    idpDiscovery: true
-							                }
+							                },
+							                logo: "/images/logo.png"
 							            });
 							
 							            signIn.session.get(function(res) {
@@ -585,8 +586,9 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                        // Assumes there is an empty element on the page with an id of 'osw-container'
 							                        { el: '#widget-container' },
 							                        
-							                        function(res) {
-							                            if (res.status === 'IDP_DISCOVERY') {
+							                        function success(res) {
+							                        	console.log(res);
+							                        	if (res.status === 'IDP_DISCOVERY') {
 							                                console.log("data: %s", JSON.stringify(res));
                                                                                         var state = Math.floor(Math.random() * 1000) + 1000;
                                                                                         var nonce = Math.floor(Math.random() * 1000) + 1000;

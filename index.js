@@ -320,6 +320,19 @@ displayDefault = function(req, res) {
     });
 }
 
+incrementProgressiveProfileLogin = function(body) {
+    console.log("incrementProgressiveProfileLogin");
+    return new Promise((resolve, reject) => {
+        var json = JSON.parse(body);
+        
+        console.log("ID_TOKEN");
+        console.log(json.id_token);
+        
+        
+        resolve(body);
+    });
+}
+
 getOIDCTokens = function(code) {
     console.log("getOIDCTokens()");
     return new Promise((resolve, reject) => {
@@ -343,7 +356,8 @@ getOIDCTokens = function(code) {
         
         request(options, function (error, response, body) {
             if (error) reject ( error )
-            resolve(body);
+            //console.log(body);
+            incrementProgressiveProfileLogin(body).then(resolve(body));
         });
         
     });
