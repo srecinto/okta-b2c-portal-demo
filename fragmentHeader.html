@@ -74,6 +74,7 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 	</style>
     <script>
         jQuery(document).ready(function($) {
+        	
 			console.log("Ready!!!");
 			var signIn = new OktaSignIn({
                 baseUrl: '{{oktaOrg}}',
@@ -135,6 +136,37 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
                     );
                 }
             });
+            
+            $("#regSubmit").on("click", (event) => {
+				console.log("regSubmit.click()");
+				var submissionRequest = {
+					"firstName": $("#regFirstName").val(),
+					"lastName": $("#regLastName").val(),
+					"email": $("#regEmail").val(),
+					"password": $("#regPassword").val(),
+					"confirmPassword": $("#regConfirmPassword").val(),
+				}
+				
+				$.ajax({
+					url: "/createuser",
+					type: "POST",
+					contentType: "application/json",
+					data: JSON.stringify(submissionRequest),
+					dataType: "json",
+					success: function(requestData) {
+					    console.log("createuser response");
+					    console.log(requestData);
+					    if(requestData.success) {
+					    	console.log("SUCCESS!!!");
+					    	alert("You account has been successfully created! Please sign in to access more features.");
+					    	location.reload();
+					    } else {
+					    	alert(requestData.message);
+					    }
+					}
+				});
+			});
+            
 		});
         
         function getCookie(cname) {
