@@ -257,7 +257,7 @@ handleOidcCode = function(req, res) {
                 var tokenResponse = JSON.parse(results);
                 res.writeHead(302, {
                     "Location": process.env.appBaseUrl,
-                    "Set-Cookie": ["token_response=" + tokenResponse.access_token, "id_token=" + tokenResponse.id_token]
+                    "Set-Cookie": ["access_token=" + tokenResponse.access_token, "id_token=" + tokenResponse.id_token]
                 });
                 res.end();
             })
@@ -332,15 +332,9 @@ incrementProgressiveProfileLogin = function(body) {
             console.log("ID_TOKEN");
             //console.log(json.id_token);
             //TODO: Introspect toke to make sure it is valid
-            var tempIdToken = json.id_token;
-            //console.log("tempIdToken: " + tempIdToken);
-            tempIdToken = tempIdToken.substr(tempIdToken.indexOf(".") + 1, tempIdToken.length);
-            //console.log("tempIdToken: " + tempIdToken);
-            tempIdToken = tempIdToken.substr(0, tempIdToken.indexOf("."));
-            //console.log("tempIdToken: " + tempIdToken);
-            var idToken = new Buffer(tempIdToken, 'base64').toString("utf-8");
-            console.log(idToken);
-            var idTokenJSON = JSON.parse(idToken);
+            
+            var idTokenJSON = parseIdToken(json.id_token);
+            
             var oktaUser = idTokenJSON.sub;
             console.log("UserId: " + oktaUser);
             
@@ -471,6 +465,9 @@ var requiredObjects = function( requestObj ) {
 }
 getUserProfile  = function ( requestObj )  {
     return new Promise ( (resolve)=> {
+        
+        
+        
         requestObj.userProfile = {
             "id": "00u1a2izikgyTFgl21d8",
             "status": "ACTIVE",
@@ -1359,4 +1356,17 @@ applyFragment = function (fragmentFileName, requestObj) {
     });
 }
 
-
+parseIdToken = function(rawIdToken) {
+    console.log("parseIdToken()");
+    
+    var tempIdToken = rawIdToken;
+    //console.log("tempIdToken: " + tempIdToken);
+    tempIdToken = tempIdToken.substr(tempIdToken.indexOf(".") + 1, tempIdToken.length);
+    //console.log("tempIdToken: " + tempIdToken);
+    tempIdToken = tempIdToken.substr(0, tempIdToken.indexOf("."));
+    //console.log("tempIdToken: " + tempIdToken);
+    var idToken = new Buffer(tempIdToken, 'base64').toString("utf-8");
+    console.log(idToken);
+    
+    return JSON.parse(idToken);
+}

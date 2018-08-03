@@ -571,9 +571,40 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                        issuer: "{{oktaOrg}}/oauth2/{{oktaAuthServerId}}"
 							                    });
 							            		var idToken = getCookie("id_token");
+							            		var accessToken = getCookie("access_token");
 							                    var decodedIdToken = authClient.token.decode(idToken);
 							                    console.log(decodedIdToken);
 							                    $("#userProfileLinkLabel").text(decodedIdToken.payload.name);
+							                    
+							                    //Progress Profile alert
+							                    $.ajax({
+													url: "{{oktaOrg}}/oauth2/{{oktaAuthServerId}}/v1/userinfo",
+													type: "GET",
+													crossDomain: true,
+    												//dataType: 'jsonp',
+													beforeSend: function(request) {
+													    request.setRequestHeader("Authorization", "Bearer " + accessToken);
+													    request.setRequestHeader("Accept", "application/json");
+													},
+													contentType: "application/json",
+													success: function(requestData) {
+													    console.log("userinfo response");
+													    console.log(requestData);
+													    
+													    if(requestData.currentNumLogins > requestData.promptAfterNumLogins) {
+													    	//Check if progressive profile is needed to prompt
+													    	$.ajax({
+																url: "/progrssiveprofile",
+																type: "GET",
+														    	contentType: "application/json",
+																success: function(requestData) {
+																	console.log("progressive profile response");
+													    			console.log(requestData);
+																}
+													    	});
+													    }
+													}
+												});
 							                    
 							            
 							                } else {
