@@ -588,7 +588,10 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 							                        function(res) {
 							                            if (res.status === 'IDP_DISCOVERY') {
 							                                console.log("data: %s", JSON.stringify(res));
-							                                res.idpDiscovery.redirectToIdp('{{appBaseUrl}}');
+                                                                                        var state = Math.floor(Math.random() * 1000) + 1000;
+                                                                                        var nonce = Math.floor(Math.random() * 1000) + 1000;
+                                                                                        var authurl='{{oktaOrg}}/oauth2/{{oktaAuthServerId}}/v1/authorize?client_id={{oktaClientId}}&redirect_uri={{oktaRedirectUri}}&response_type=code&response_mode=form_post&display=none&scope=openid%20profile&nonce='+ nonce + '&state=' + state
+							                                res.idpDiscovery.redirectToIdp(authurl);
 							                            }
 							                        }
 							        
